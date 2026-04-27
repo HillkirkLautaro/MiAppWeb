@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Mi App</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Productos</h1>
+
+<div id="lista"></div>
+
+<h2>Agregar producto</h2>
+<input id="nombre" placeholder="Nombre">
+<input id="precio" placeholder="Precio">
+<button onclick="agregar()">Agregar</button>
+
+<script>
+const API = "/api/productos";
+
+// GET
+async function cargar() {
+  const res = await fetch(API);
+  const data = await res.json();
+
+  const lista = document.getElementById("lista");
+  lista.innerHTML = "";
+
+  data.forEach(p => {
+    lista.innerHTML += `
+      <div class="card">
+        ${p.nombre} - $${p.precio}
+      </div>
+    `;
+  });
+}
+
+// POST
+async function agregar() {
+  const nombre = document.getElementById("nombre").value;
+  const precio = parseInt(document.getElementById("precio").value);
+
+  await fetch(API, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ nombre, precio })
+  });
+
+  cargar();
+}
+
+cargar();
+</script>
+
+</body>
+</html>
