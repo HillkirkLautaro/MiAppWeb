@@ -135,7 +135,6 @@ Funciones principales:
 ## 🚧 Posibles mejoras
 
 * 🗄️ Integrar base de datos (SQLite / PostgreSQL)
-* ✏️ Editar y eliminar productos (CRUD completo)
 * ✅ Validaciones en backend
 * 🔐 Autenticación
 * ⚛️ Migrar frontend a React o framework moderno
