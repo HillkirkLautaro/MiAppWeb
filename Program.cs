@@ -5,37 +5,65 @@ var app = builder.Build();
 
 var ruta = "productos.json";
 
-// GET → leer siempre del archivo
-app.MapGet("/api/productos", () =>
+List<Producto> LeerProductos()
 {
     if (!File.Exists(ruta))
         return new List<Producto>();
 
     var json = File.ReadAllText(ruta);
-    return JsonSerializer.Deserialize<List<Producto>>(json);
+    return JsonSerializer.Deserialize<List<Producto>>(json) ?? new List<Producto>();
+}
+
+void GuardarProductos(List<Producto> productos)
+{
+    File.WriteAllText(ruta, JsonSerializer.Serialize(productos));
+}
+
+app.MapGet("/api/productos", () => LeerProductos());
+
+app.MapGet("/api/productos/{id}", (int id) =>
+{
+    var productos = LeerProductos();
+    var producto = productos.FirstOrDefault(p => p.Id == id);
+    return producto is not null ? Results.Ok(producto) : Results.NotFound();
 });
 
-// POST → leer + agregar + guardar
 app.MapPost("/api/productos", (Producto nuevo) =>
 {
-    List<Producto> productos;
-
-    if (File.Exists(ruta))
-    {
-        var json = File.ReadAllText(ruta);
-        productos = JsonSerializer.Deserialize<List<Producto>>(json) ?? new List<Producto>();
-    }
-    else
-    {
-        productos = new List<Producto>();
-    }
-
+    var productos = LeerProductos();
     nuevo.Id = productos.Count > 0 ? productos.Max(p => p.Id) + 1 : 1;
     productos.Add(nuevo);
-
-    File.WriteAllText(ruta, JsonSerializer.Serialize(productos));
-
+    GuardarProductos(productos);
     return Results.Created($"/api/productos/{nuevo.Id}", nuevo);
+});
+
+app.MapPut("/api/productos/{id}", (int id, Producto productoActualizado) =>
+{
+    var productos = LeerProductos();
+    var producto = productos.FirstOrDefault(p => p.Id == id);
+
+    if (producto is null)
+        return Results.NotFound();
+
+    producto.Nombre = productoActualizado.Nombre;
+    producto.Precio = productoActualizado.Precio;
+    GuardarProductos(productos);
+
+    return Results.NoContent();
+});
+
+app.MapDelete("/api/productos/{id}", (int id) =>
+{
+    var productos = LeerProductos();
+    var producto = productos.FirstOrDefault(p => p.Id == id);
+
+    if (producto is null)
+        return Results.NotFound();
+
+    productos.Remove(producto);
+    GuardarProductos(productos);
+
+    return Results.NoContent();
 });
 
 app.UseDefaultFiles();

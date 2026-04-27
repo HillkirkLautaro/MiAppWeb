@@ -16,6 +16,45 @@
       margin: 10px 0;
       border-radius: 8px;
     }
+
+    .form-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .form-row input {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      min-width: 150px;
+    }
+
+    .form-row button,
+    .actions button,
+    .editor button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+
+    .actions button {
+      margin-right: 10px;
+    }
+
+    .editor {
+      margin-top: 10px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -25,9 +64,11 @@
 <div id="lista"></div>
 
 <h2>Agregar producto</h2>
-<input id="nombre" placeholder="Nombre">
-<input id="precio" placeholder="Precio">
-<button onclick="agregar()">Agregar</button>
+<div class="form-row">
+  <input id="nombre" placeholder="Nombre">
+  <input id="precio" placeholder="Precio" type="number">
+  <button onclick="agregar()">Agregar</button>
+</div>
 
 <script>
 const API = "/api/productos";
@@ -42,10 +83,68 @@ async function cargar() {
 
   data.forEach(p => {
     lista.innerHTML += `
-      <div class="card">
-        ${p.nombre} - $${p.precio}
+      <div class="card" data-id="${p.id}">
+        <div class="display">
+          <strong>${p.nombre}</strong> - $${p.precio}
+        </div>
+        <div class="actions">
+          <button class="edit-btn">Editar</button>
+          <button class="delete-btn">Eliminar</button>
+        </div>
+        <div class="editor hidden">
+          <input class="edit-nombre" value="${p.nombre}" placeholder="Nombre">
+          <input class="edit-precio" type="number" value="${p.precio}" placeholder="Precio">
+          <button class="save-btn">Guardar</button>
+          <button class="cancel-btn">Cancelar</button>
+        </div>
       </div>
     `;
+  });
+
+  document.querySelectorAll(".edit-btn").forEach(button => {
+    button.addEventListener("click", () => {
+      const card = button.closest(".card");
+      card.querySelector(".display").classList.add("hidden");
+      card.querySelector(".actions").classList.add("hidden");
+      card.querySelector(".editor").classList.remove("hidden");
+    });
+  });
+
+  document.querySelectorAll(".cancel-btn").forEach(button => {
+    button.addEventListener("click", () => {
+      const card = button.closest(".card");
+      card.querySelector(".display").classList.remove("hidden");
+      card.querySelector(".actions").classList.remove("hidden");
+      card.querySelector(".editor").classList.add("hidden");
+    });
+  });
+
+  document.querySelectorAll(".save-btn").forEach(button => {
+    button.addEventListener("click", async () => {
+      const card = button.closest(".card");
+      const id = card.dataset.id;
+      const nombre = card.querySelector(".edit-nombre").value;
+      const precio = parseInt(card.querySelector(".edit-precio").value);
+
+      await fetch(`${API}/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ nombre, precio })
+      });
+
+      cargar();
+    });
+  });
+
+  document.querySelectorAll(".delete-btn").forEach(button => {
+    button.addEventListener("click", async () => {
+      const card = button.closest(".card");
+      const id = card.dataset.id;
+      await fetch(`${API}/${id}`, { method: "DELETE" });
+      cargar();
+    });
   });
 }
 
@@ -62,6 +161,8 @@ async function agregar() {
     body: JSON.stringify({ nombre, precio })
   });
 
+  document.getElementById("nombre").value = "";
+  document.getElementById("precio").value = "";
   cargar();
 }
 
